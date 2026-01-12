@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlists - MiTube</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .playlists-header {
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-bottom: 1px solid #303030;
+            margin-bottom: 30px;
+        }
+
+        .playlists-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 600;
+        }
+
+        .playlists-header p {
+            margin: 10px 0 0 0;
+            color: #aaa;
+            font-size: 16px;
+        }
+
+        .create-playlist-btn {
+            background: #00bfff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+
+        .create-playlist-btn:hover {
+            background: #00a8d8;
+        }
+
+        .large-playlist-card {
+            background: #212121;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+
+        .large-playlist-card:hover {
+            background: #313131;
+            transform: translateY(-5px);
+        }
+
+        .large-playlist-thumbnail {
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .large-playlist-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .playlist-overlay-large {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 50px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .large-playlist-card:hover .playlist-overlay-large {
+            opacity: 1;
+        }
+
+        .playlist-count-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .large-playlist-info {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .large-playlist-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .large-playlist-info p {
+            margin: 0 0 10px 0;
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .playlist-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .playlist-actions button {
+            background: #00bfff;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .playlist-actions button:hover {
+            background: #00a8d8;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        .empty-message h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .large-playlist-card {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: 250px;
+            }
+
+            .large-playlist-thumbnail {
+                height: 180px;
+            }
+
+            .large-playlist-info {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">🎬 MiTube</a>
+    <input type="text" id="search-playlists" placeholder="Buscar playlists..." style="flex: 1; margin: 0 20px;">
+    <a href="videos.html" style="text-decoration: none; color: #fff; padding: 8px 16px; background: #212121; border-radius: 20px; font-size: 14px;">🎥 Videos</a>
+</header>
+
+<div class="playlists-header">
+    <h1>Playlists</h1>
+    <p id="playlists-count">0 playlists</p>
+</div>
+
+<div class="container">
+    <div id="playlists-full-container"></div>
+</div>
+
+<script src="videos.js"></script>
+<script>
+    function renderPlaylistsFull() {
+        const container = document.getElementById("playlists-full-container");
+        document.getElementById("playlists-count").textContent = playlists.length + " playlist" + (playlists.length !== 1 ? "s" : "");
+
+        if (playlists.length === 0) {
+            container.innerHTML = `
+                <div class="empty-message">
+                    <h2>Sin playlists aún</h2>
+                    <p>Crea tu primera playlist para organizar tus videos favoritos</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        playlists.forEach(playlist => {
+            const playlistVideos = videos.filter(v => playlist.videos.includes(v.id));
+            const thumbnail = playlistVideos[0]?.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23313131' width='100' height='100'/%3E%3C/svg%3E";
+            
+            const card = document.createElement("div");
+            card.className = "large-playlist-card";
+            card.innerHTML = `
+                <div class="large-playlist-thumbnail">
+                    <img src="${thumbnail}" alt="${playlist.title}">
+                    <div class="playlist-overlay-large">▶</div>
+                    <div class="playlist-count-badge">${playlistVideos.length} video${playlistVideos.length !== 1 ? 's' : ''}</div>
+                </div>
+                <div class="large-playlist-info">
+                    <div>
+                        <h3>${playlist.title}</h3>
+                        <p>${playlist.description || 'Sin descripción'}</p>
+                    </div>
+                    <div class="playlist-actions">
+                        <button onclick="openPlaylist(${playlist.id})">▶ Reproducir</button>
+                        <button onclick="viewPlaylistDetails(${playlist.id})">Ver Videos</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function openPlaylist(playlistId) {
+        const playlist = playlists.find(p => p.id === playlistId);
+        if (playlist && playlist.videos.length > 0) {
+            window.location.href = `video.html?id=${playlist.videos[0]}&playlist=${playlistId}`;
+        }
+    }
+
+    function viewPlaylistDetails(playlistId) {
+        window.location.href = `playlist.html?id=${playlistId}`;
+    }
+
+    // Buscador
+    const searchInput = document.getElementById("search-playlists");
+    searchInput.addEventListener("keyup", e => {
+        const text = e.target.value.toLowerCase();
+        const filtered = playlists.filter(p => 
+            p.title.toLowerCase().includes(text) ||
+            (p.description && p.description.toLowerCase().includes(text))
+        );
+        
+        const container = document.getElementById("playlists-full-container");
+        document.getElementById("playlists-count").textContent = filtered.length + " playlist" + (filtered.length !== 1 ? "s" : "");
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-message">
+                    <h2>Sin resultados</h2>
+                    <p>No se encontraron playlists que coincidan con tu búsqueda</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        filtered.forEach(playlist => {
+            const playlistVideos = videos.filter(v => playlist.videos.includes(v.id));
+            const thumbnail = playlistVideos[0]?.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23313131' width='100' height='100'/%3E%3C/svg%3E";
+            
+            const card = document.createElement("div");
+            card.className = "large-playlist-card";
+            card.innerHTML = `
+                <div class="large-playlist-thumbnail">
+                    <img src="${thumbnail}" alt="${playlist.title}">
+                    <div class="playlist-overlay-large">▶</div>
+                    <div class="playlist-count-badge">${playlistVideos.length} video${playlistVideos.length !== 1 ? 's' : ''}</div>
+                </div>
+                <div class="large-playlist-info">
+                    <div>
+                        <h3>${playlist.title}</h3>
+                        <p>${playlist.description || 'Sin descripción'}</p>
+                    </div>
+                    <div class="playlist-actions">
+                        <button onclick="openPlaylist(${playlist.id})">▶ Reproducir</button>
+                        <button onclick="viewPlaylistDetails(${playlist.id})">Ver Videos</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    });
+
+    // Cargar inicial
+    renderPlaylistsFull();
+</script>
+
+</body>
+</html>

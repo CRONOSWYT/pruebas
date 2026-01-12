@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles de Playlist - MiTube</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .playlist-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .playlist-header {
+            background: linear-gradient(135deg, rgba(0, 191, 255, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 50px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            border: 1px solid #303030;
+        }
+
+        .playlist-header-image {
+            width: 100%;
+            height: 350px;
+            background: #111;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .playlist-header-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .playlist-header-info h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 0 0 20px 0;
+            color: #fff;
+        }
+
+        .playlist-header-info p {
+            font-size: 16px;
+            color: #aaa;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .playlist-stats {
+            display: flex;
+            gap: 30px;
+            margin: 30px 0;
+            padding: 20px 0;
+            border-top: 1px solid #303030;
+            border-bottom: 1px solid #303030;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00bfff;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .playlist-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn-large {
+            background: #00bfff;
+            color: #000;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-large:hover {
+            background: #00a8d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 191, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: #212121;
+            color: #fff;
+            border: 1px solid #303030;
+        }
+
+        .btn-secondary:hover {
+            background: #313131;
+            border-color: #404040;
+        }
+
+        .videos-grid-section {
+            margin-top: 50px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: #00bfff;
+            border-radius: 2.5px;
+        }
+
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .video-card {
+            background: #212121;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #303030;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-card:hover {
+            background: #313131;
+            border-color: #00bfff;
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(0, 191, 255, 0.2);
+        }
+
+        .video-card-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .video-card-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-card:hover .video-card-thumbnail img {
+            transform: scale(1.05);
+        }
+
+        .video-number-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #00bfff;
+            color: #000;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            z-index: 2;
+        }
+
+        .video-duration-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .video-play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 50px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
+        .video-card:hover .video-play-icon {
+            opacity: 1;
+        }
+
+        .video-card-info {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .video-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #fff;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-card-meta {
+            font-size: 12px;
+            color: #aaa;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .empty-playlist {
+            text-align: center;
+            padding: 80px 40px;
+            color: #aaa;
+        }
+
+        .empty-playlist h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #212121;
+            color: #fff;
+            border: 1px solid #303030;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background: #313131;
+            border-color: #404040;
+        }
+
+        @media (max-width: 1024px) {
+            .playlist-header {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .playlist-header-image {
+                height: 280px;
+            }
+
+            .playlist-header-info h1 {
+                font-size: 36px;
+            }
+
+            .videos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .playlist-container {
+                padding: 20px;
+            }
+
+            .playlist-header {
+                padding: 30px 20px;
+                border-radius: 10px;
+            }
+
+            .playlist-header-image {
+                height: 220px;
+            }
+
+            .playlist-header-info h1 {
+                font-size: 28px;
+            }
+
+            .playlist-buttons {
+                flex-direction: column;
+            }
+
+            .btn-large {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .videos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">🎬 MiTube</a>
+    <input type="text" id="search" placeholder="Buscar videos...">
+    <a href="videos.html" style="text-decoration: none; color: #fff; padding: 8px 16px; background: #212121; border-radius: 20px; font-size: 14px;">🎥 Videos</a>
+</header>
+
+<div class="playlist-container">
+    <button class="back-button" onclick="window.history.back()">← Volver</button>
+    <div id="playlist-content"></div>
+</div>
+
+<script src="videos.js"></script>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const playlistId = parseInt(params.get("id"));
+    
+    const currentPlaylist = playlists.find(p => p.id === playlistId);
+    const contentDiv = document.getElementById("playlist-content");
+
+    if (!currentPlaylist) {
+        contentDiv.innerHTML = `
+            <div class="empty-playlist">
+                <h2>❌ Playlist no encontrada</h2>
+                <p>La playlist que buscas no existe o fue eliminada.</p>
+            </div>
+        `;
+    } else {
+        const playlistVideos = getVideosByIds(currentPlaylist.videos);
+        const firstVideo = playlistVideos[0];
+        const thumbUrl = firstVideo?.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23313131' width='100' height='100'/%3E%3C/svg%3E";
+
+        contentDiv.innerHTML = `
+            <div class="playlist-header">
+                <div class="playlist-header-image">
+                    <img src="${thumbUrl}" alt="${currentPlaylist.title}">
+                </div>
+                <div class="playlist-header-info">
+                    <h1>${currentPlaylist.title}</h1>
+                    <p>${currentPlaylist.description || 'Sin descripción disponible'}</p>
+                    
+                    <div class="playlist-stats">
+                        <div class="stat">
+                            <div class="stat-number">${playlistVideos.length}</div>
+                            <div class="stat-label">Videos</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">1${playlistVideos.length}</div>
+                            <div class="stat-label">Horas aprox</div>
+                        </div>
+                    </div>
+
+                    <div class="playlist-buttons">
+                        <button class="btn-large" onclick="playPlaylist()">
+                            ▶ Reproducir Todo
+                        </button>
+                        <button class="btn-large btn-secondary" onclick="shufflePlaylist()">
+                            🔀 Modo Aleatorio
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="videos-grid-section">
+                <div class="section-title">Todos los Videos</div>
+                <div class="videos-grid" id="videos-grid"></div>
+            </div>
+        `;
+
+        // Renderizar videos
+        const grid = document.getElementById("videos-grid");
+        if (playlistVideos.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-playlist" style="grid-column: 1/-1;">
+                    <h2>Playlist vacía</h2>
+                    <p>Esta playlist no tiene videos aún</p>
+                </div>
+            `;
+        } else {
+            playlistVideos.forEach((video, index) => {
+                const videoCard = document.createElement("div");
+                videoCard.className = "video-card";
+                videoCard.onclick = () => openVideo(video.id, playlistId);
+                
+                videoCard.innerHTML = `
+                    <div class="video-card-thumbnail">
+                        <img src="${video.thumbnail}" alt="${video.title}">
+                        <div class="video-number-badge">${index + 1}</div>
+                        <div class="video-duration-badge">${video.duration}</div>
+                        <div class="video-play-icon">▶</div>
+                    </div>
+                    <div class="video-card-info">
+                        <div class="video-card-title">${video.title}</div>
+                        <div class="video-card-meta">
+                            <div>${video.author}</div>
+                            <div>${formatUploadDate(video.uploadDate)}</div>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(videoCard);
+            });
+        }
+    }
+
+    function openVideo(videoId, playlistId) {
+        window.location.href = `video.html?id=${videoId}&playlist=${playlistId}`;
+    }
+
+    function playPlaylist() {
+        const firstVideoId = currentPlaylist.videos[0];
+        window.location.href = `video.html?id=${firstVideoId}&playlist=${playlistId}`;
+    }
+
+    function shufflePlaylist() {
+        const shuffled = [...currentPlaylist.videos].sort(() => Math.random() - 0.5);
+        const firstVideoId = shuffled[0];
+        window.location.href = `video.html?id=${firstVideoId}&playlist=${playlistId}`;
+    }
+</script>
+
+</body>
+</html>

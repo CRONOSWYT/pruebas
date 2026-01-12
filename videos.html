@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todos los Videos - MiTube</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .videos-header {
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-bottom: 1px solid #303030;
+            margin-bottom: 30px;
+        }
+
+        .videos-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #212121;
+            border: 1px solid #303030;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #313131;
+            border-color: #404040;
+        }
+
+        .filter-btn.active {
+            background: #00bfff;
+            border-color: #00bfff;
+        }
+
+        .sort-control {
+            margin-left: auto;
+        }
+
+        .sort-control select {
+            background: #212121;
+            border: 1px solid #303030;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">🎬 MiTube</a>
+    <input type="text" id="search" placeholder="Buscar videos...">
+    <a href="playlists.html" style="text-decoration: none; color: #fff; padding: 8px 16px; background: #212121; border-radius: 20px; font-size: 14px;">📋 Playlists</a>
+</header>
+
+<div class="videos-header">
+    <h1>Biblioteca de Videos</h1>
+    <div class="filter-controls">
+        <button class="filter-btn active" onclick="filterVideos('all')">Todos</button>
+        <button class="filter-btn" onclick="filterVideos('recent')">Recientes</button>
+        <button class="filter-btn" onclick="filterVideos('oldest')">Antiguos</button>
+        <div class="sort-control">
+            <select id="sortSelect" onchange="sortVideos()">
+                <option value="recent">Más recientes</option>
+                <option value="oldest">Más antiguos</option>
+                <option value="title">Alfabético</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div id="all-videos-container" class="videos-container"></div>
+</div>
+
+<script src="videos.js"></script>
+<script src="script.js"></script>
+<script>
+    // Esperar a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("✓ DOM cargado");
+        console.log("✓ Videos disponibles:", videos.length);
+        console.log("✓ Videos:", videos);
+        
+        let filteredVideos = [...videos];
+        let currentFilter = 'all';
+
+        window.filterVideos = function(type) {
+            currentFilter = type;
+            
+            document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+            event.target.classList.add("active");
+
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+            if (type === 'recent') {
+                filteredVideos = videos.filter(v => v.uploadDate >= sevenDaysAgo);
+            } else if (type === 'oldest') {
+                filteredVideos = videos.filter(v => v.uploadDate < sevenDaysAgo);
+            } else {
+                filteredVideos = [...videos];
+            }
+
+            sortVideos();
+        };
+
+        window.sortVideos = function() {
+            const sortValue = document.getElementById("sortSelect").value;
+            const toSort = [...filteredVideos];
+
+            if (sortValue === 'recent') {
+                toSort.sort((a, b) => b.uploadDate - a.uploadDate);
+            } else if (sortValue === 'oldest') {
+                toSort.sort((a, b) => a.uploadDate - b.uploadDate);
+            } else if (sortValue === 'title') {
+                toSort.sort((a, b) => a.title.localeCompare(b.title));
+            }
+
+            console.log("Renderizando", toSort.length, "videos");
+            renderVideos(toSort, "all-videos-container");
+        };
+
+        // Buscador
+        const searchInput = document.getElementById("search");
+        if (searchInput) {
+            searchInput.addEventListener("keyup", e => {
+                const text = e.target.value.toLowerCase();
+                const filtered = videos.filter(v => 
+                    v.title.toLowerCase().includes(text) ||
+                    v.author.toLowerCase().includes(text)
+                );
+                renderVideos(filtered, "all-videos-container");
+            });
+        }
+
+        // Cargar inicial
+        console.log("Iniciando carga de videos...");
+        sortVideos();
+    });
+</script>
+
+</body>
+</html>
