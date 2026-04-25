@@ -63,6 +63,7 @@
   <p><strong>Documento:</strong> <span id="doc"></span></p>
   <p><strong>Hora:</strong> <span id="hora"></span></p>
   <p id="estado"></p>
+  <button id="btnReiniciar" style="display:none; background:#4CAF50; margin-top:20px;" onclick="location.reload()">Reiniciar para siguiente QR</button>
 </div>
 
 <script>
@@ -96,11 +97,22 @@ function descifrarQR(qr){
 // ==================== FUNCIONES DE BASE DE DATOS ====================
 async function guardarEnSupabase(data){
   try{
+    // Obtén la hora actual en formato correcto (zona horaria local)
+    const ahora = new Date();
+    const fechaLocal = ahora.toLocaleString('es-ES', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$2-$1 $4:$5:$6');
+    
     const { error } = await supabaseClient.from("registros_qr").insert([{
       nombre: data.nombre,
       grado: data.grado,
       documento: data.documento,
-      fecha_hora: new Date().toISOString(),
+      fecha_hora: fechaLocal,
       estado: "Registro correcto"
     }]);
 
@@ -130,21 +142,28 @@ async function procesarQR(qr){
       return;
     }
 
+    // Detiene la cámara para no leer más QRs
+    await lector.stop();
+    camaraActiva = false;
+
     // Actualiza la interfaz
     document.getElementById("nombre").textContent = datos.nombre;
     document.getElementById("grado").textContent = datos.grado;
     document.getElementById("doc").textContent = datos.documento;
-    document.getElementById("hora").textContent = new Date().toLocaleString();
+    document.getElementById("hora").textContent = new Date().toLocaleString('es-ES');
 
     // Guarda en Supabase
     const ok = await guardarEnSupabase(datos);
 
     if(ok){
       mostrar("✅ Registro correcto", true);
+      // Muestra el botón de reinicio
+      document.getElementById("btnReiniciar").style.display = "block";
+    } else {
+      mostrar("❌ Error al guardar", false);
+      // Reinicia la cámara si hay error
+      setTimeout(() => iniciarCamara(), 1500);
     }
-
-    // Reinicia la cámara automáticamente después de procesar
-    setTimeout(() => iniciarCamara(), 2500);
     
   }catch(error){
     console.error("Error procesando QR:", error);
