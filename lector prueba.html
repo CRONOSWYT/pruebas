@@ -97,16 +97,18 @@ function descifrarQR(qr){
 // ==================== FUNCIONES DE BASE DE DATOS ====================
 async function guardarEnSupabase(data){
   try{
-    // Obtén la hora actual en formato correcto (zona horaria local)
+    // Obtén la hora actual en formato de 12 horas con zona horaria de Colombia
     const ahora = new Date();
     const fechaLocal = ahora.toLocaleString('es-ES', { 
+      timeZone: 'America/Bogota',
       year: 'numeric', 
       month: '2-digit', 
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
-    }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$2-$1 $4:$5:$6');
+      second: '2-digit',
+      hour12: true
+    }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)\s(a\.m\.|p\.m\.)/, '$3-$2-$1 $4:$5:$6 $7');
     
     const { error } = await supabaseClient.from("registros_qr").insert([{
       nombre: data.nombre,
@@ -150,7 +152,14 @@ async function procesarQR(qr){
     document.getElementById("nombre").textContent = datos.nombre;
     document.getElementById("grado").textContent = datos.grado;
     document.getElementById("doc").textContent = datos.documento;
-    document.getElementById("hora").textContent = new Date().toLocaleString('es-ES');
+    const horaDigital = new Date().toLocaleString('es-ES', {
+      timeZone: 'America/Bogota',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    document.getElementById("hora").textContent = horaDigital;
 
     // Guarda en Supabase
     const ok = await guardarEnSupabase(datos);
