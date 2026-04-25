@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lector QR - TimeQRLock</title>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #e0f7fa;
+        margin: 0;
+        padding: 20px;
+      }
+
+      h2 {
+        text-align: center;
+      }
+
+      #lector {
+        margin: 0 auto;
+        max-width: 400px;
+      }
+
+      #resultados {
+        margin-top: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .ok {
+        color: green;
+        font-weight: bold;
+      }
+
+      .fail {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Lector QR - TimeQRLock</h2>
+
+    <div id="lector"></div>
+
+    <div id="resultados">
+      <p><strong>Nombre:</strong> <span id="nombre"></span></p>
+      <p><strong>Grado:</strong> <span id="grado"></span></p>
+      <p><strong>Documento:</strong> <span id="doc"></span></p>
+      <p><strong>Hora:</strong> <span id="hora"></span></p>
+      <p id="estado"></p>
+    </div>
+
+    <script>
+      // ==============================
+      // CONFIGURACIÓN SUPABASE
+      // ==============================
+      const SUPABASE_URL = "https://nzhjlkahdelpfaubxjck.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56aGpsa2FoZGVscGZhdWJ4amNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDM3OTUsImV4cCI6MjA5MjAxOTc5NX0.i48_52r0xsq-EK69k9UNPqTT_BsbgCN3n9mD1I8vOvI";
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      // ==============================
+      // CONFIGURACIÓN QR
+      // ==============================
+      const clave = "timeqrlock";
+      const lector = new Html5Qrcode("lector");
+
+      function mostrar(mensaje, ok) {
+        const estado = document.getElementById("estado");
+        estado.textContent = mensaje;
+        estado.className = ok ? "ok" : "fail";
+      }
+
+      function descifrarQR(qr) {
+        try {
+          const bytes = CryptoJS.AES.decrypt(qr, clave);
+          const texto = bytes.toString(CryptoJS.enc.Utf8);
+          return JSON.parse(texto);
+        } catch (error) {
+          return null;
+        }
+      }
+
+      async function guardarEnSupabase(data) {
+        const ahora = new Date();
+
+        const { error } = await supabase.from("registros_qr").insert([
+          {
+            nombre: data.nombre,
+            grado: data.grado,
+            documento: data.documento,
+            fecha_hora: ahora.toISOString(),
+            estado: "Registro correcto",
+          },
+        ]);
+
+        if (error) {
+          console.error("Error guardando:", error);
+          mostrar("❌ Error al guardar en Supabase", false);
+          return false;
+        }
+
+        return true;
+      }
+
+      async function mostrarDatos(data) {
+        const ahora = new Date();
+
+        document.getElementById("nombre").textContent = data.nombre;
+        document.getElementById("grado").textContent = data.grado;
+        document.getElementById("doc").textContent = data.documento;
+        document.getElementById("hora").textContent = ahora.toLocaleString();
+
+        const guardado = await guardarEnSupabase(data);
+
+        if (guardado) {
+          mostrar("✅ Registro correcto", true);
+        }
+      }
+
+      function iniciar(camaraId) {
+        lector
+          .start(
+            camaraId,
+            {
+              fps: 30,
+              qrbox: 250,
+              facingMode: "environment",
+            },
+            async (qr) => {
+              await lector.stop();
+
+              const datos = descifrarQR(qr);
+
+              if (datos && datos.nombre && datos.grado && datos.documento) {
+                await mostrarDatos(datos);
+              } else {
+                mostrar("❌ QR inválido", false);
+              }
+
+              setTimeout(() => {
+                iniciar(camaraId);
+              }, 1500);
+            },
+          )
+          .catch(() => {
+            mostrar("❌ No se pudo iniciar la cámara", false);
+          });
+      }
+
+      Html5Qrcode.getCameras().then((camaras) => {
+        let trasera = camaras.find((cam) =>
+          /back|rear|environment/i.test(cam.label),
+        );
+
+        if (!trasera) trasera = camaras[0];
+
+        if (trasera) {
+          iniciar(trasera.id);
+        } else {
+          mostrar("🚫 No se encontró cámara", false);
+        }
+      });
+    </script>
+  </body>
+</html>
