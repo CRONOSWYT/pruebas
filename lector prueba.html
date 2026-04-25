@@ -39,7 +39,7 @@ body{
   height:120px;
   object-fit:cover;
   border-radius:10px;
-  display:block;
+  display:none;
   margin:10px auto;
 }
 
@@ -64,7 +64,7 @@ button{
 <div id="lector"></div>
 
 <div id="resultados">
-  <img id="foto" src="" style="display:none;">
+  <img id="foto">
   <p><strong>Nombre:</strong> <span id="nombre"></span></p>
   <p><strong>Grado:</strong> <span id="grado"></span></p>
   <p><strong>Documento:</strong> <span id="doc"></span></p>
@@ -107,24 +107,37 @@ function descifrarQR(qr){
   }
 }
 
-// ================= GUARDAR ASISTENCIA =================
-async function guardarAsistencia(data){
-  const ahora = new Date();
+// ================= BUSCAR ESTUDIANTE =================
+async function obtenerEstudiante(documento){
+  const { data, error } = await supabaseClient
+    .from("estudiantes_qr")
+    .select("*")
+    .eq("documento", documento)
+    .single();
 
+  if(error){
+    console.error(error);
+    return null;
+  }
+
+  return data;
+}
+
+// ================= GUARDAR ASISTENCIA =================
+async function guardarAsistencia(estudiante){
   const { error } = await supabaseClient
     .from("registros_qr")
     .insert([{
-      nombre: data.nombre,
-      grado: data.grado,
-      documento: data.documento,
-      foto_url: data.foto_url,
-      fecha_hora: ahora.toISOString(),
+      nombre: estudiante.nombre,
+      grado: estudiante.grado,
+      documento: estudiante.documento,
+      foto_url: estudiante.foto_url,
+      fecha_hora: new Date().toISOString(),
       estado: "Registro correcto"
     }]);
 
   if(error){
     console.error(error);
-    mostrar("❌ Error guardando asistencia", false);
     return false;
   }
 
@@ -135,34 +148,43 @@ async function guardarAsistencia(data){
 async function procesarQR(qr){
   await lector.stop();
 
-  const datos = descifrarQR(qr);
+  const datosQR = descifrarQR(qr);
 
-  if(!datos){
+  if(!datosQR || !datosQR.documento){
     mostrar("❌ QR inválido", false);
     return;
   }
 
-  document.getElementById("nombre").textContent = datos.nombre;
-  document.getElementById("grado").textContent = datos.grado;
-  document.getElementById("doc").textContent = datos.documento;
+  const estudiante = await obtenerEstudiante(datosQR.documento);
+
+  if(!estudiante){
+    mostrar("❌ Estudiante no encontrado", false);
+    return;
+  }
+
+  document.getElementById("nombre").textContent = estudiante.nombre;
+  document.getElementById("grado").textContent = estudiante.grado;
+  document.getElementById("doc").textContent = estudiante.documento;
   document.getElementById("hora").textContent = new Date().toLocaleString();
 
-  if(datos.foto_url){
+  if(estudiante.foto_url){
     const foto = document.getElementById("foto");
-    foto.src = datos.foto_url;
+    foto.src = estudiante.foto_url;
     foto.style.display = "block";
   }
 
-  const ok = await guardarAsistencia(datos);
+  const ok = await guardarAsistencia(estudiante);
 
   if(ok){
     mostrar("✅ Asistencia registrada", true);
+  }else{
+    mostrar("❌ Error guardando asistencia", false);
   }
 
   document.getElementById("btnReiniciar").style.display = "block";
 }
 
-// ================= INICIAR LECTOR =================
+// ================= INICIAR CÁMARA =================
 async function iniciarCamara(){
   try{
     const camaras = await Html5Qrcode.getCameras();
